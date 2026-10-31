@@ -1,0 +1,235 @@
+/* PhytoScan AI - High-Tech Agricultural Biosensing & Diagnostics Stylesheet */
+
+:root {
+  --primary-emerald: #10b981;
+  --primary-glow: rgba(16, 185, 129, 0.4);
+  --danger-crimson: #ef4444;
+  --warning-amber: #f59e0b;
+  --bg-deep: #090d16;
+  --card-bg: rgba(15, 23, 42, 0.75);
+  --card-border: rgba(51, 65, 85, 0.6);
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg-deep);
+  color: #f1f5f9;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism panels */
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--card-border);
+}
+
+.glass-panel-glow {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+}
+
+/* Reticle & Scanner Animations */
+.scanner-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-laser-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #10b981, #34d399, #10b981, transparent);
+  box-shadow: 0 0 16px #34d399, 0 0 30px #10b981;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.scanning .scan-laser-line {
+  opacity: 1;
+  animation: scanSweep 2s ease-in-out infinite alternate;
+}
+
+@keyframes scanSweep {
+  0% {
+    top: 5%;
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 92%;
+    opacity: 0.9;
+  }
+}
+
+/* HUD Reticle Corners */
+.hud-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: #10b981;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.hud-tl {
+  top: 16px;
+  left: 16px;
+  border-top: 3px solid #10b981;
+  border-left: 3px solid #10b981;
+}
+
+.hud-tr {
+  top: 16px;
+  right: 16px;
+  border-top: 3px solid #10b981;
+  border-right: 3px solid #10b981;
+}
+
+.hud-bl {
+  bottom: 16px;
+  left: 16px;
+  border-bottom: 3px solid #10b981;
+  border-left: 3px solid #10b981;
+}
+
+.hud-br {
+  bottom: 16px;
+  right: 16px;
+  border-bottom: 3px solid #10b981;
+  border-right: 3px solid #10b981;
+}
+
+/* Target Reticle Crosshair in Center */
+.crosshair-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  border: 1px dashed rgba(16, 185, 129, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.crosshair-center::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background-color: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #10b981;
+}
+
+/* Pulsing radar effect */
+.radar-pulse {
+  animation: radarPing 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes radarPing {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 14px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Antenna Wave animation */
+.antenna-wave {
+  animation: antennaRipple 1.8s ease-out infinite;
+}
+
+@keyframes antennaRipple {
+  0% {
+    opacity: 1;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+/* Tab active indicator */
+.nav-tab.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #34d399;
+}
+
+/* Leaflet Map overrides for Dark Mode */
+.leaflet-container {
+  background: #090d16 !important;
+  font-family: inherit !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.95) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #10b981 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
+}
+
+.leaflet-popup-tip {
+  background: #0f172a !important;
+}
+
+/* Print Styles for Diagnostic Certificate */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+  
+  header, nav, #camera-controls, .no-print {
+    display: none !important;
+  }
+  
+  #printable-report {
+    display: block !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}

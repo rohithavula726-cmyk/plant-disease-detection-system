@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhytoScan AI - Autonomous Plant Disease Detection & Agrisat Platform</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              450: '#10b981',
+              950: '#022c22',
+            },
+            slate: {
+              850: '#111827',
+              900: '#0f172a',
+              950: '#090d16',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Leaflet CSS & JS for Satellite GIS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Chart.js for IoT Antenna Telemetry -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Canvas Confetti for Healthy Plant Celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- Top Navigation & System Status Header -->
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-1 ring-emerald-400/40">
+          <i data-lucide="scan" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 bg-clip-text text-transparent">
+              PhytoScan AI
+            </h1>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              v4.2 PRO
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Autonomous Plant Pathology • IoT Antenna Mesh • Orbital Agrisat</p>
+        </div>
+      </div>
+
+      <!-- Live Sensor & Satellite Telemetry Tele-Badges -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <!-- Camera Status -->
+        <div id="camera-status-pill" class="flex items-center px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700/60 font-mono text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-slate-500 mr-2"></span> Camera Standby
+        </div>
+
+        <!-- LoRa Antenna Status -->
+        <div class="flex items-center px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700/60 font-mono text-emerald-400">
+          <span class="relative flex h-2 w-2 mr-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          Antenna Mast: 915MHz Active
+        </div>
+
+        <!-- Satellite Sentinel-2 Status -->
+        <div class="flex items-center px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700/60 font-mono text-sky-400">
+          <i data-lucide="satellite" class="w-3.5 h-3.5 mr-1.5 text-sky-400"></i> Sentinel-2 Orbit Sync
+        </div>
+
+        <!-- Utility Buttons -->
+        <div class="flex items-center space-x-1 pl-2 border-l border-slate-800">
+          <button id="btn-toggle-sound" title="Toggle Biosound Effects" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-colors">
+            <i data-lucide="volume-2" class="w-4 h-4"></i>
+          </button>
+          <button id="btn-toggle-speech" title="Toggle Voice Readout" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-colors">
+            <i data-lucide="mic" class="w-4 h-4"></i>
+          </button>
+          <button id="btn-export-report" title="Print Agronomy Dossier" class="p-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 transition-all flex items-center gap-1.5 text-xs font-semibold px-3">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Export Dossier</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Bar -->
+    <div class="max-w-7xl mx-auto mt-3 pt-2 border-t border-slate-800/60 flex flex-wrap gap-2">
+      <button data-view="camera-scanner" class="nav-tab active px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 border border-transparent transition-all">
+        <i data-lucide="camera" class="w-4 h-4 text-emerald-400"></i>
+        <span>1. Leaf Camera Scanner</span>
+      </button>
+
+      <button data-view="antenna" class="nav-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-2 border border-transparent transition-all">
+        <i data-lucide="radio" class="w-4 h-4 text-amber-400"></i>
+        <span>2. IoT Antenna & Sensors</span>
+      </button>
+
+      <button data-view="satellite" class="nav-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-2 border border-transparent transition-all">
+        <i data-lucide="globe" class="w-4 h-4 text-sky-400"></i>
+        <span>3. Satellite NDVI & GIS</span>
+      </button>
+
+      <button data-view="encyclopedia" class="nav-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-2 border border-transparent transition-all">
+        <i data-lucide="book-open" class="w-4 h-4 text-teal-400"></i>
+        <span>4. Disease Encyclopedia</span>
+      </button>
+
+      <button data-view="history" class="nav-tab px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-2 border border-transparent transition-all">
+        <i data-lucide="file-text" class="w-4 h-4 text-purple-400"></i>
+        <span>5. Agronomy Reports</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: OPTICAL LEAF CAMERA SCANNER & DIAGNOSTICS -->
+    <!-- ========================================== -->
+    <section id="view-camera-scanner" class="view-section space-y-6">
+      
+      <!-- Top Overview Banner -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-l-emerald-500">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="focus" class="w-5 h-5 text-emerald-400"></i>
+            Optical Macro Leaf Pathology Detection System
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Hold leaf up to camera, upload a photo, or choose from our pre-rendered pathology specimens below to diagnose disease in milliseconds.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <input type="file" id="leaf-file-input" accept="image/*" class="hidden">
+          <button id="btn-upload-leaf" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all">
+            <i data-lucide="upload-cloud" class="w-4 h-4 text-sky-400"></i> Upload Photo
+          </button>
+          <button id="btn-toggle-camera" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all">
+            <i data-lucide="video" class="w-4 h-4"></i> Start Webcam
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Scanner Layout: 2 Columns (Scanner Viewport + Deep Diagnostics Dossier) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left: Camera Viewport & HUD (7 cols) -->
+        <div class="lg:col-span-7 space-y-4">
+          <div id="scanner-wrapper" class="scanner-container rounded-2xl glass-panel-glow relative aspect-[4/3] bg-black/90 overflow-hidden flex items-center justify-center border-2 border-slate-800">
+            
+            <!-- Video & Canvas Elements -->
+            <video id="scanner-video" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
+            <canvas id="scanner-canvas" class="w-full h-full object-cover"></canvas>
+            <canvas id="scanner-overlay" class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+
+            <!-- Laser Scanning Sweep Line -->
+            <div class="scan-laser-line"></div>
+
+            <!-- Targeting HUD Reticles -->
+            <div class="hud-corner hud-tl"></div>
+            <div class="hud-corner hud-tr"></div>
+            <div class="hud-corner hud-bl"></div>
+            <div class="hud-corner hud-br"></div>
+            <div class="crosshair-center"></div>
+
+            <!-- Optical Grid Overlay -->
+            <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_40%,rgba(0,0,0,0.6)_100%)]"></div>
+
+            <!-- Top Left HUD Telemetry Badge -->
+            <div class="absolute top-4 left-4 z-20 flex flex-col gap-1 text-[11px] font-mono">
+              <span class="px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                AI MACRO SPECTRAL ENGINE
+              </span>
+              <span class="px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-slate-300 border border-slate-700/50">
+                FOV: 84° • ISO 200 • F/1.8
+              </span>
+            </div>
+
+            <!-- Bottom Control HUD Strip -->
+            <div class="absolute bottom-4 inset-x-4 z-20 flex items-center justify-between">
+              <div class="text-[11px] font-mono text-slate-300 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg border border-slate-800">
+                <span id="scan-status-text">Ready. Position leaf inside targeting crosshair.</span>
+              </div>
+              <button id="btn-capture-scan" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/30 flex items-center gap-2 active:scale-95 transition-all">
+                <i data-lucide="scan" class="w-3.5 h-3.5"></i> Diagnose Now
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Preloaded High-Resolution Sample Leaves Library -->
+          <div class="glass-panel rounded-2xl p-4 sm:p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
+                Preset Pathology Library (1-Click Test Samples)
+              </h3>
+              <span class="text-xs text-slate-400">Select any diseased leaf specimen below</span>
+            </div>
+            <div id="sample-leaves-gallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-72 overflow-y-auto pr-1">
+              <!-- Dynamically populated by samples.js / app.js -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Deep Diagnostic Dossier & Treatment Protocol (5 cols) -->
+        <div id="diagnostic-panel" class="lg:col-span-5 space-y-4">
+          
+          <!-- Diagnosis Header Card -->
+          <div class="glass-panel rounded-2xl p-5 border border-slate-700/80 space-y-4 relative overflow-hidden">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <span id="diag-category-badge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                  Oomycete / Water Mold
+                </span>
+                <h3 id="diag-disease-name" class="text-2xl font-black text-slate-100 mt-2">Late Blight</h3>
+                <div id="diag-plant-name" class="text-sm font-semibold text-emerald-400">Tomato (Solanum lycopersicum)</div>
+                <div id="diag-scientific-name" class="text-xs text-slate-400 italic font-serif">Pathogen: Phytophthora infestans</div>
+              </div>
+              <div class="text-right">
+                <span id="diag-severity-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-red-500/20 text-red-400 border border-red-500/40">
+                  Severity: Critical
+                </span>
+              </div>
+            </div>
+
+            <!-- Confidence & Risk Meter -->
+            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                <div class="text-[11px] text-slate-400">AI Diagnostic Confidence</div>
+                <div id="diag-confidence" class="text-xl font-bold font-mono text-emerald-400">97.4%</div>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                <div class="text-[11px] text-slate-400">Action Urgency</div>
+                <div id="diag-urgency" class="text-xs font-bold text-amber-400 mt-1">Immediate (< 24 hrs)</div>
+              </div>
+            </div>
+
+            <!-- Antenna Correlation Note -->
+            <div class="bg-slate-900/80 p-3 rounded-xl border border-amber-500/30 flex items-start gap-2.5 text-xs text-slate-300">
+              <i data-lucide="radio" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+              <div>
+                <strong class="text-amber-400">IoT Antenna Correlation:</strong>
+                <span id="diag-sensor-correlation">Favorable conditions: high humidity and extended leaf moisture</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Symptoms & Root Causes Accordion -->
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <i data-lucide="eye" class="w-4 h-4 text-sky-400"></i> Identified Lesion Symptoms
+              </h4>
+              <ul id="diag-symptoms-list" class="space-y-1.5"></ul>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> Infection Vectors & Causes
+              </h4>
+              <ul id="diag-causes-list" class="space-y-1.5"></ul>
+            </div>
+          </div>
+
+          <!-- Comprehensive Treatment Protocol (Organic + Chemical + Preventive) -->
+          <div class="glass-panel rounded-2xl p-5 space-y-4 border border-emerald-500/30">
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5">
+                <i data-lucide="leaf" class="w-4 h-4 text-emerald-400"></i> Organic & Biological Remedies
+              </h4>
+              <ul id="diag-organic-list" class="space-y-2"></ul>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-sky-400 mb-2 flex items-center gap-1.5">
+                <i data-lucide="flask-conical" class="w-4 h-4 text-sky-400"></i> Commercial / Chemical Fungicides
+              </h4>
+              <ul id="diag-chemical-list" class="space-y-2"></ul>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-slate-300"></i> Preventative Agronomy Practices
+              </h4>
+              <ul id="diag-prevention-list" class="space-y-2"></ul>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: IOT ANTENNA & WIRELESS SENSOR NETWORK -->
+    <!-- ========================================== -->
+    <section id="view-antenna" class="view-section hidden space-y-6">
+      
+      <!-- Antenna Network Header -->
+      <div class="glass-panel rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-l-amber-500">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="radio" class="w-5 h-5 text-amber-400"></i>
+            AgriMesh IoT Antenna & Microclimate Telemetry Network
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Real-time wireless LoRaWAN 915 MHz sensor masts calculating microclimate disease germination risk.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-slate-400 font-medium">Select Antenna Mast:</label>
+          <select id="antenna-node-select" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 font-mono focus:ring-2 focus:ring-amber-500 outline-none"></select>
+        </div>
+      </div>
+
+      <!-- Live RF Telemetry Quick Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+          <div class="text-[11px] text-slate-400 flex items-center gap-1">
+            <i data-lucide="signal" class="w-3.5 h-3.5 text-emerald-400"></i> RF Link RSSI
+          </div>
+          <div id="stat-antenna-rf" class="text-sm sm:text-base font-bold font-mono text-emerald-400 mt-1">-71 dBm</div>
+        </div>
+
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+          <div class="text-[11px] text-slate-400 flex items-center gap-1">
+            <i data-lucide="cpu" class="w-3.5 h-3.5 text-sky-400"></i> Frequency
+          </div>
+          <div id="stat-antenna-freq" class="text-sm sm:text-base font-bold font-mono text-sky-400 mt-1">915.2 MHz</div>
+        </div>
+
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+          <div class="text-[11px] text-slate-400 flex items-center gap-1">
+            <i data-lucide="battery-charging" class="w-3.5 h-3.5 text-amber-400"></i> Mast Battery
+          </div>
+          <div id="stat-antenna-battery" class="text-sm sm:text-base font-bold font-mono text-amber-400 mt-1">94% Solar</div>
+        </div>
+
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+          <div class="text-[11px] text-slate-400 flex items-center gap-1">
+            <i data-lucide="droplets" class="w-3.5 h-3.5 text-sky-400"></i> Leaf Wetness
+          </div>
+          <div id="val-leaf-wetness" class="text-sm sm:text-base font-bold font-mono text-slate-100 mt-1">88%</div>
+        </div>
+
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+          <div class="text-[11px] text-slate-400 flex items-center gap-1">
+            <i data-lucide="thermometer" class="w-3.5 h-3.5 text-red-400"></i> Air Temp
+          </div>
+          <div id="val-air-temp" class="text-sm sm:text-base font-bold font-mono text-slate-100 mt-1">19.4°C</div>
+        </div>
+
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+          <div class="text-[11px] text-slate-400 flex items-center gap-1">
+            <i data-lucide="cloud-rain" class="w-3.5 h-3.5 text-purple-400"></i> Humidity
+          </div>
+          <div id="val-rel-humidity" class="text-sm sm:text-base font-bold font-mono text-slate-100 mt-1">91%</div>
+        </div>
+      </div>
+
+      <!-- Autonomous Disease Germination Risk Assessment Strip -->
+      <div class="glass-panel rounded-2xl p-5 border border-red-500/30 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="p-2 rounded-lg bg-red-500/20 text-red-400">
+              <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+            </span>
+            <div>
+              <h3 class="text-sm font-bold text-slate-100">Antenna Disease Germination Risk Engine</h3>
+              <p class="text-xs text-slate-400">Calculated from continuous leaf wetness duration, canopy humidity, and temperature profiles</p>
+            </div>
+          </div>
+          <div id="antenna-disease-risk" class="text-sm font-bold text-red-400 bg-red-950/40 px-3 py-1.5 rounded-lg border border-red-500/40">
+            CRITICAL ALERT (95% Fungal Germination Risk)
+          </div>
+        </div>
+        <div class="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-800">
+          <div id="antenna-risk-bar" class="bg-red-500 h-full rounded-full transition-all duration-500" style="width: 95%"></div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-1">
+          <span>Continuous Wetness Duration: <strong id="val-leaf-wetness-hours" class="text-slate-200">7.2 hrs continuous</strong></span>
+          <span>Soil Volumetric Water: <strong id="val-soil-moisture" class="text-slate-200">42% VWC</strong></span>
+          <span>Solar PAR Radiation: <strong id="val-solar-par" class="text-slate-200">640 µmol/m²/s</strong></span>
+        </div>
+      </div>
+
+      <!-- Microclimate Scenario Simulator Triggers -->
+      <div class="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="text-xs text-slate-300 flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-emerald-400"></i>
+          <strong>Simulate Environmental Triggers:</strong>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-sim-dew" class="px-3 py-1.5 rounded-lg bg-red-950/50 hover:bg-red-900/60 text-red-300 border border-red-800/60 text-xs font-semibold flex items-center gap-1.5 transition-all">
+            <i data-lucide="droplet" class="w-3.5 h-3.5 text-red-400"></i> Wet Dew Cycle (Blight Trigger)
+          </button>
+          <button id="btn-sim-heat" class="px-3 py-1.5 rounded-lg bg-amber-950/50 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 text-xs font-semibold flex items-center gap-1.5 transition-all">
+            <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i> Heatwave (Whitefly Vector)
+          </button>
+          <button id="btn-sim-normal" class="px-3 py-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/60 text-xs font-semibold flex items-center gap-1.5 transition-all">
+            <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Normal Growth Baseline
+          </button>
+        </div>
+      </div>
+
+      <!-- Charts & Packet Log Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Environmental Trend Chart (7 cols) -->
+        <div class="lg:col-span-7 glass-panel rounded-2xl p-5 space-y-3">
+          <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4 text-sky-400"></i>
+            Continuous Microclimate Telemetry History
+          </h3>
+          <div class="h-64 relative">
+            <canvas id="chart-telemetry-env"></canvas>
+          </div>
+        </div>
+
+        <!-- Right: Soil NPK Nutrients & Antenna Packet Log (5 cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="glass-panel rounded-2xl p-5 space-y-3">
+            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i>
+              Soil N-P-K Agronomic Sensor Balance
+            </h3>
+            <div class="h-36 relative">
+              <canvas id="chart-telemetry-soil"></canvas>
+            </div>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-5 space-y-2">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <i data-lucide="terminal" class="w-3.5 h-3.5 text-amber-400"></i> LoRa Antenna Packet Log
+              </h3>
+              <span class="text-[10px] font-mono text-emerald-400 animate-pulse">STREAM LIVE</span>
+            </div>
+            <div id="antenna-packet-logs" class="h-28 overflow-y-auto space-y-1 pr-1 font-mono">
+              <div class="text-xs font-mono text-emerald-300/90 py-1 border-b border-slate-800/80 flex items-center">
+                <span class="text-slate-500 mr-2">[Initial]</span> <span class="text-amber-400 mr-2">LoraRF</span> Link Established: RSSI -71 dBm, Freq 915.2MHz
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: SATELLITE REMOTE SENSING & GIS -->
+    <!-- ========================================== -->
+    <section id="view-satellite" class="view-section hidden space-y-6">
+      
+      <!-- Satellite Header -->
+      <div class="glass-panel rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-l-sky-500">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="satellite" class="w-5 h-5 text-sky-400"></i>
+            Orbital Satellite Multi-Spectral Plant Health Observation
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Sentinel-2 high-resolution multispectral imagery detecting canopy stress, biomass density (NDVI), and early pathogen outbreaks from orbit.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-satellite-orbit-scan" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-lg shadow-sky-600/30 transition-all">
+            <i data-lucide="radar" class="w-4 h-4"></i> Trigger Orbital Pass
+          </button>
+        </div>
+      </div>
+
+      <!-- Spectral Band Controls Bar -->
+      <div class="glass-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-300">Spectral Band Composite:</span>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button data-band="ndvi" class="sat-band-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white border border-emerald-400 transition-all">
+              NDVI (Canopy Vigor)
+            </button>
+            <button data-band="ndre" class="sat-band-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">
+              NDRE (Red Edge Chlorophyll)
+            </button>
+            <button data-band="thermal" class="sat-band-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">
+              Thermal IR (Water Deficit)
+            </button>
+            <button data-band="rgb" class="sat-band-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">
+              True Color (RGB)
+            </button>
+          </div>
+        </div>
+        <div id="sat-orbital-status" class="text-xs font-mono text-sky-400">
+          🛰️ Sentinel-2B Overpass: 10m Ground Sample Distance (GSD)
+        </div>
+      </div>
+
+      <!-- Satellite Map Viewport -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Interactive Leaflet Map (8 cols) -->
+        <div class="lg:col-span-8 glass-panel rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span id="sat-active-band-indicator" class="font-mono text-emerald-400">
+              Normalized Difference Vegetation Index (NDVI: NIR - Red / NIR + Red)
+            </span>
+            <span>Click any farm plot sector to inspect crop health</span>
+          </div>
+          <div id="satellite-map" class="h-[480px] rounded-xl overflow-hidden border border-slate-700"></div>
+        </div>
+
+        <!-- Right: Farm Sectors Health Dossier (4 cols) -->
+        <div class="lg:col-span-4 space-y-3">
+          <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+            Observed Agricultural Sectors
+          </h3>
+
+          <div class="space-y-3 overflow-y-auto max-h-[480px] pr-1">
+            <!-- Plot Alpha -->
+            <div class="glass-panel p-4 rounded-xl border border-red-500/50 hover:bg-slate-800/40 transition-all space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-100 text-sm">Plot Alpha: Greenhouse Cluster</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-400 font-bold border border-red-500/30">Late Blight</span>
+              </div>
+              <div class="text-xs text-emerald-400">Crop: Tomato (4.8 ha)</div>
+              <p class="text-xs text-slate-400">NIR reflectance drop indicates canopy breakdown. Correlated with Antenna #1 humidity alarm.</p>
+              <div class="flex items-center justify-between pt-1">
+                <span class="font-mono text-xs text-red-400">NDVI: 0.38 (Severe Drop)</span>
+                <button onclick="window.inspectSatellitePlot('tomato_late_blight')" class="text-xs text-emerald-400 hover:underline font-semibold flex items-center gap-1">
+                  Inspect in Scanner <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Plot Bravo -->
+            <div class="glass-panel p-4 rounded-xl border border-emerald-500/40 hover:bg-slate-800/40 transition-all space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-100 text-sm">Plot Bravo: Pioneer Corn Valley</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">Optimal</span>
+              </div>
+              <div class="text-xs text-emerald-400">Crop: Corn / Maize (18.2 ha)</div>
+              <p class="text-xs text-slate-400">High photosynthetic density and full vegetative canopy closure.</p>
+              <div class="flex items-center justify-between pt-1">
+                <span class="font-mono text-xs text-emerald-400">NDVI: 0.84 (High Vigor)</span>
+                <button onclick="window.inspectSatellitePlot('healthy_crop')" class="text-xs text-emerald-400 hover:underline font-semibold flex items-center gap-1">
+                  Inspect in Scanner <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Plot Charlie -->
+            <div class="glass-panel p-4 rounded-xl border border-amber-500/40 hover:bg-slate-800/40 transition-all space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-100 text-sm">Plot Charlie: Estate Vineyards</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">Mildew Alert</span>
+              </div>
+              <div class="text-xs text-emerald-400">Crop: Grapevine (9.6 ha)</div>
+              <p class="text-xs text-slate-400">Thermal IR shows elevated canopy temperature from stomatal closure.</p>
+              <div class="flex items-center justify-between pt-1">
+                <span class="font-mono text-xs text-amber-400">NDVI: 0.54 (Moderate)</span>
+                <button onclick="window.inspectSatellitePlot('grape_downy_mildew')" class="text-xs text-emerald-400 hover:underline font-semibold flex items-center gap-1">
+                  Inspect in Scanner <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Plot Delta -->
+            <div class="glass-panel p-4 rounded-xl border border-orange-500/40 hover:bg-slate-800/40 transition-all space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-100 text-sm">Plot Delta: Orchard Terraces</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 font-bold border border-orange-500/30">Scab Risk</span>
+              </div>
+              <div class="text-xs text-emerald-400">Crop: Apple (12.4 ha)</div>
+              <p class="text-xs text-slate-400">NDRE values dipping in western rows. Early defoliation risk spotted.</p>
+              <div class="flex items-center justify-between pt-1">
+                <span class="font-mono text-xs text-orange-400">NDVI: 0.62 (Watch)</span>
+                <button onclick="window.inspectSatellitePlot('apple_scab')" class="text-xs text-emerald-400 hover:underline font-semibold flex items-center gap-1">
+                  Inspect in Scanner <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 4: DISEASE ENCYCLOPEDIA & FIELD GUIDE -->
+    <!-- ========================================== -->
+    <section id="view-encyclopedia" class="view-section hidden space-y-6">
+      
+      <!-- Encyclopedia Search & Filters -->
+      <div class="glass-panel rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-l-teal-500">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="book-open" class="w-5 h-5 text-teal-400"></i>
+            Plant Pathology Encyclopedia & Treatment Repository
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Searchable agronomic reference covering symptoms, pathogen classifications, and clinical cures.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <input type="text" id="encyclopedia-search" placeholder="Search disease or crop..." class="bg-slate-900 border border-slate-700 text-slate-200 text-xs sm:text-sm rounded-xl px-3.5 py-2 w-48 sm:w-60 focus:ring-2 focus:ring-teal-500 outline-none">
+          <select id="encyclopedia-category-filter" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 outline-none">
+            <option value="all">All Pathogen Types</option>
+            <option value="Fungal">Fungal Diseases</option>
+            <option value="Bacterial">Bacterial Pathogens</option>
+            <option value="Viral">Viral & Vector</option>
+            <option value="Oomycete">Oomycetes (Water Molds)</option>
+            <option value="Healthy">Healthy Baselines</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Encyclopedia Cards Grid -->
+      <div id="encyclopedia-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Dynamically rendered by app.js -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 5: SCAN HISTORY & AGRONOMY REPORTS -->
+    <!-- ========================================== -->
+    <section id="view-history" class="view-section hidden space-y-6">
+      
+      <div class="glass-panel rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-l-purple-500">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="clipboard-check" class="w-5 h-5 text-purple-400"></i>
+            Diagnostic Audit Log & Certified Agronomic Certificates
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Historical trace of leaf scans with correlated environmental telemetry and verifiable export sheets.
+          </p>
+        </div>
+        <div>
+          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-lg shadow-purple-600/30 transition-all">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print Official Report
+          </button>
+        </div>
+      </div>
+
+      <!-- History Table -->
+      <div class="glass-panel rounded-2xl overflow-hidden border border-slate-800">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 bg-slate-900/80 text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                <th class="py-3 px-4">Timestamp</th>
+                <th class="py-3 px-4">Crop Specimen</th>
+                <th class="py-3 px-4">Diagnosed Pathogen</th>
+                <th class="py-3 px-4">Severity</th>
+                <th class="py-3 px-4 text-right">Confidence</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr>
+                <td colspan="5" class="py-6 text-center text-slate-500 text-xs">No scan history recorded yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Printable Certificate Template (Visible in Print View) -->
+      <div id="printable-report" class="glass-panel p-8 rounded-2xl border border-slate-700 space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold">
+              PS
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-slate-100">PHYTO-SANITARY DIAGNOSTIC DOSSIER</h2>
+              <p class="text-xs text-slate-400">Autonomous Plant Pathology Certification • ISO/IEC 17025 Standard</p>
+            </div>
+          </div>
+          <div class="text-right text-xs font-mono text-slate-400">
+            <div>Report Ref: <strong class="text-emerald-400">AGRI-DIAG-2026-X9</strong></div>
+            <div>Issued: <span id="print-timestamp">-</span></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
+          <div>
+            <span class="text-slate-400">Inspected Crop:</span>
+            <div id="print-plant" class="font-bold text-slate-100 text-sm mt-0.5">-</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Detected Pathology:</span>
+            <div id="print-disease" class="font-bold text-emerald-400 text-sm mt-0.5">-</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Taxonomic Name:</span>
+            <div id="print-scientific" class="italic font-serif text-slate-300 mt-0.5">-</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Severity & Confidence:</span>
+            <div class="font-bold text-slate-100 mt-0.5"><span id="print-severity">-</span> (<span id="print-confidence" class="text-emerald-400">-</span>)</div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Prescribed Agronomic Treatment Schedule</h4>
+          <ul id="print-recommendations" class="list-disc list-inside text-xs text-slate-300 space-y-1 pl-2"></ul>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+          <span>Validated by PhytoScan AI Multi-Spectral Engine & IoT Agronomy Node Array</span>
+          <span class="font-mono">Verification Hash: 0x8F9C...42D1</span>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="glass-panel border-t border-slate-800/80 px-4 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>PhytoScan AI © 2026 • Autonomous Agricultural Biosensing & Agrisat Platform</div>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span>WebRTC Vision</span>
+        <span>•</span>
+        <span>LoRaWAN Mesh Telemetry</span>
+        <span>•</span>
+        <span>Sentinel-2 Multispectral GIS</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="samples.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
